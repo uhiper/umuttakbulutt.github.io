@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hedef Top Oyunu</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #dbaeae, #e0a0ff); /* Lineer gradyan arka plan */
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            border: 2px solid black;
+            display: block;
+            margin: 0 auto;
+            background-color: white; /* Beyaz */
+        }
+
+        #container {
+            text-align: center;
+        }
+
+        #controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .control-button {
+            margin: 5px;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 12px;
+            box-shadow: 0 9px #999;
+            transition: background-color 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-button:hover {
+            background-color: #3e8e41;
+        }
+
+        .control-button:active {
+            background-color: #3e8e41;
+            box-shadow: 0 5px #666;
+            transform: translateY(4px);
+        }
+
+        .control-button:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            transform: translate(-50%, -50%) rotate(45deg);
+            z-index: -1;
+            transition: width 0.3s, height 0.3s, transform 0.3s;
+        }
+
+        .control-button:hover:before {
+            width: 200%;
+            height: 200%;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        #timer {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 24px;
+            background-color: black;
+            color: red;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            display: inline-block;
+        }
+
+        #score {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 24px;
+            background-color: black;
+            color: blue;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+            display: inline-block;
+        }
+
+        #result {
+            display: none;
+            color: red;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <p id="timer">00:00</p>
+        <p id="score">Skor: 0</p>
+        <p id="result" style="display: none; color: red; font-size: 24px;"></p>
+        <button class="control-button" style="margin-bottom: 15px;" onclick="restart()">Yeniden Başlat</button>
+    </div>
+    <canvas id="canvas" width="400" height="480"></canvas>
+    <div id="controls">
+        <button class="control-button" id="upButton" onmousedown="startMovingUp()" onmouseup="stopMoving()" ontouchstart="startMovingUp()" ontouchend="stopMoving()">Yukarı</button><br>
+        <button class="control-button" id="leftButton" onmousedown="startMovingLeft()" onmouseup="stopMoving()" ontouchstart="startMovingLeft()" ontouchend="stopMoving()">Sol</button>
+        <button class="control-button" id="rightButton" onmousedown="startMovingRight()" onmouseup="stopMoving()" ontouchstart="startMovingRight()" ontouchend="stopMoving()">Sağ</button><br>
+        <button class="control-button" id="downButton" onmousedown="startMovingDown()" onmouseup="stopMoving()" ontouchstart="startMovingDown()" ontouchend="stopMoving()">Aşağı</button>
+    </div>
+    
+    <script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const ballRadius = 10;
+let x = canvas.width / 2;
+let y = canvas.height - 30;
+let dx = 2;
+let dy = -2;
+let ballColor = "#0095DD"; // Top rengi
+
+const frameWidth = canvas.width;
+const frameHeight = canvas.height;
+
+let time = 0; // Saniye cinsinden zaman
+let timer;
+let movingInterval;
+let collisionCount = 0; // Kenara çarpma sayısı
+
+let score = 0; // Skor
+
+// Yıldızlar
+let stars = [];
+
+// Tuş dinleyicilerini ekle
+document.addEventListener("keydown", keyDownHandler, false);
+document.addEventListener("keyup", keyUpHandler, false);
+
+let rightPressed = false;
+let leftPressed = false;
+let upPressed = false;
+let downPressed = false;
+
+function keyDownHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+        rightPressed = true;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+        leftPressed = true;
+    } else if (e.key === "Up" || e.key === "ArrowUp") {
+        upPressed = true;
+    } else if (e.key === "Down" || e.key === "ArrowDown") {
+        downPressed = true;
+    }
+}
+
+function keyUpHandler(e) {
+    if (e.key === "Right" || e.key === "ArrowRight") {
+        rightPressed = false;
+    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+        leftPressed = false;
+    } else if (e.key === "Up" || e.key === "ArrowUp") {
+        upPressed = false;
+    } else if (e.key === "Down" || e.key === "ArrowDown") {
+        downPressed = false;
+    }
+}
+
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = ballColor; // Top rengini uygula
+    ctx.fill();
+    ctx.closePath();
+}
+
+// Yıldız çizimi
+function drawStar(starX, starY, radius, spikes, color) {
+    let rot = (Math.PI / 2) * 3;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(starX, starY - radius);
+    for (let i = 0; i < spikes; i++) {
+        let x = starX + Math.cos(rot) * radius;
+        let y = starY + Math.sin(rot) * radius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = starX + Math.cos(rot) * (radius * 0.5);
+        y = starY + Math.sin(rot) * (radius * 0.5);
+        ctx.lineTo(x, y);
+        rot += step;
+    }
+    ctx.lineTo(starX, starY - radius);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+// Yıldızları oluştur
+function createStars() {
+    for (let i = 0; i < 2; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height
+        });
+    }
+}
+
+createStars();
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBall();
+
+    // Yıldızları çiz
+    for (let i = 0; i < stars.length; i++) {
+        drawStar(stars[i].x, stars[i].y, 5, 5, "#FFD700");
+    }
+
+    // Duvar çarpışmalarını kontrol et ve hareket et
+    if (x + dx > frameWidth - ballRadius || x + dx < ballRadius) {
+        dx = -dx;
+        collisionCount++;
+    }
+    if (y + dy < ballRadius || y + dy > frameHeight - ballRadius) {
+        dy = -dy;
+        collisionCount++;
+    }
+
+    x += dx;
+    y += dy;
+
+    // Hareket tuşlarını kontrol et
+    if (rightPressed && x < canvas.width - ballRadius) {
+        x += 7;
+    } else if (leftPressed && x > ballRadius) {
+        x -= 7;
+    }
+    if (downPressed && y < canvas.height - ballRadius) {
+        y += 7;
+    } else if (upPressed && y > ballRadius) {
+        y -= 7;
+    }
+
+    // Yıldızları yakalama kontrolü
+    for (let i = 0; i < stars.length; i++) {
+        if (x > stars[i].x - 10 && x < stars[i].x + 10 && y > stars[i].y - 10 && y < stars[i].y + 10) {
+            score++;
+            stars[i] = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height
+            };
+            document.getElementById("score").textContent = "Skor: " + score;
+        }
+    }
+}
+
+function startMovingUp() {
+    upPressed = true;
+    movingInterval = setInterval(moveUp, 10);
+}
+
+function startMovingDown() {
+    downPressed = true;
+    movingInterval = setInterval(moveDown, 10);
+}
+
+function startMovingLeft() {
+    leftPressed = true;
+    movingInterval = setInterval(moveLeft, 10);
+}
+
+function startMovingRight() {
+    rightPressed = true;
+    movingInterval = setInterval(moveRight, 10);
+}
+
+function stopMoving() {
+    clearInterval(movingInterval);
+    upPressed = false;
+    downPressed = false;
+    leftPressed = false;
+    rightPressed = false;
+}
+
+function moveUp() {
+    if (y > ballRadius) {
+        y -= 1;
+    }
+}
+
+function moveDown() {
+    if (y < canvas.height - ballRadius) {
+        y += 1;
+    }
+}
+
+function moveLeft() {
+    if (x > ballRadius) {
+        x -= 1;
+    }
+}
+
+function moveRight() {
+    if (x < canvas.width - ballRadius) {
+        x += 1;
+    }
+}
+
+// Zamanlayıcıyı başlat
+timer = setInterval(function() {
+    time++;
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    document.getElementById("timer").innerHTML = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}, 1000);
+
+function restart() {
+    clearInterval(timer);
+    time = 0;
+    collisionCount = 0;
+    score = 0;
+    document.getElementById("result").style.display = "none"; // Kaybetme mesajını gizle
+    document.getElementById("timer").innerHTML = "00:00";
+    document.getElementById("score").textContent = "Skor: 0";
+    ballColor = "#0095DD"; // Top rengini varsayılan değere döndür
+    x = canvas.width / 2; // Topu ortadan başlat
+    y = canvas.height - 30; // Topu ortadan başlat
+    stars = []; // Yıldızları sıfırla
+    createStars(); // Yıldızları yeniden oluştur
+    timer = setInterval(function() {
+        time++;
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        document.getElementById("timer").innerHTML = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+setInterval(draw, 10);
+
+// Rastgele renk oluştur
+setInterval(function() {
+    ballColor = getRandomColor();
+}, 200); // 200 ms'de bir topun rengi değişsin
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+// Topun kenara çarpmasını kontrol et
+function collisionDetection() {
+    if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+        dx = -dx;
+        collisionCount++;
+    }
+    if (y + dy < ballRadius || y + dy > canvas.height - ballRadius) {
+        dy = -dy;
+        collisionCount++;
+    }
+
+    // Eğer iki kez çarptıysa, oyunu kaybet ve sonucu göster
+    if (collisionCount >= 2) {
+        clearInterval(timer);
+        document.getElementById("result").style.display = "block";
+        document.getElementById("result").innerHTML = `YOU LOST! Skorunuz: ${score}`;
+    }
+}
+
+setInterval(collisionDetection, 10); // Topun her hareketinde çarpışmayı kontrol et
+    </script>
+</body>
+</html>

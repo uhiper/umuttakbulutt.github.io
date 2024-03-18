@@ -1,0 +1,106 @@
+/* Genel stiller */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header stilleri */
+header {
+    background-color: #FF914D; /* Arka plan rengi */
+    color: #fff;
+    text-align: center;
+    border: 3px solid #f8f9fa;
+    padding: 40px 20px 30px;
+}
+
+
+header h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 18px;
+}
+
+/* Blog gönderi stilleri */
+.blog-post {
+    display: flex;
+    margin-bottom: 40px;
+}
+
+.post-content {
+    flex: 1;
+    padding-right: 20px;
+}
+
+.post-image {
+    flex: 1;
+}
+
+.post-content h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.post-content p {
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.post-image img {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.post-image img:hover {
+    transform: scale(1.05);
+}
+
+/* Footer stilleri */
+footer {
+    background-color: #FF914D;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.footer-icons a {
+    font-size: 24px;
+    margin-right: 10px;
+    color: #fff;
+    transition: color 0.3s;
+}
+
+.footer-icons a:hover {
+    color: #6d9dd1;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+.footer-icons a[href="mailto:umutakbulut1155@hotmail.com"] i:hover {
+    color: #bcdfec;
+}
+
+.footer-icons a[href="https://www.linkedin.com/in/umutakbulutt/"] i:hover {
+    color: #3b84d3;
+}
+
+.footer-icons a[href="https://www.instagram.com/umutt.akbulut/"] i:hover {
+    color: #ec4c69;
+}
+
+.footer-icons a[href="https://github.com/uhiper"] i:hover {
+    color: #252424;
+}
